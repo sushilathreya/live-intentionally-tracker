@@ -4,12 +4,14 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const admin = require('firebase-admin'); // Import Firebase Admin SDK
+require('dotenv').config();
+
 
 const app = express(); // Initialize Express
 const PORT = process.env.PORT || 3000; // Use environment port or 3000
 
 // Firebase Admin Initialization
-const serviceAccount = require('./live-intentionally-firebase-adminsdk-fbsvc-9c5a0b5ef1.json'); // Ensure the path is correct
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     databaseURL: 'https://live-intentionally-default-rtdb.europe-west1.firebasedatabase.app/', // Replace with your Firebase Database URL
