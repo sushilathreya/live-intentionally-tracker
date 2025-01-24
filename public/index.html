@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Habit Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Collaborative 90-Day Habit Tracker</h1>
+        <div id="app">
+            <table id="habit-table">
+                <thead>
+                    <tr>
+                        <th>Habit</th>
+                        <!-- Columns for days with sub-columns -->
+                        <script>
+                            for (let day = 1; day <= 90; day++) {
+                                document.write(`<th colspan="2">Day ${day}</th>`);
+                            }
+                        </script>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <!-- Sub-columns for Sushil and Sravan -->
+                        <script>
+                            for (let day = 1; day <= 90; day++) {
+                                document.write(`<th>Sushil</th><th>Sravan</th>`);
+                            }
+                        </script>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Predefined habits -->
+                    <script>
+                        const habits = [
+                            "No junk social media use",
+                            "No TV, entertainment videos (YouTube, Netflix, etc.), movies, or video games",
+                            "No pornography or erotica of any type",
+                            "No masturbation",
+                            "No alcohol, weed, cigarettes, or any recreational drugs",
+                            "No music about sex, drinking, drugs, love, passivity, sadness, or weakness",
+                            "Work on your mission",
+                            "10,000 Steps",
+                            "Strength training (3-4 times per week)",
+                            "Sprint training (1 time per week)",
+                            "Explosive sport (1 time per week)",
+                            "Cardio (at least 150 minutes per week)",
+                            "Full body stretching",
+                            "Eat clean and 100g of protein",
+                            "Read 1 hour per day (or listen to an audiobook)",
+                            "Sleep at least 7 hours a day and follow a consistent sleep schedule",
+                            "Get at least 20-30 minutes of direct sunlight",
+                            "Meditate 15 minutes per day",
+                            "Write in your journal",
+                            "Produce something and publish it online (1 hour)",
+                            "Repeat your affirmations out loud after waking up and before you sleep",
+                            "Treat yourself like a friend you are responsible for helping",
+                            "Re-frame problems as opportunities",
+                            "No gossiping",
+                            "Compliment someone",
+                            "Practice persuasion and PowerTalk",
+                        ];
+
+                        habits.forEach((habit, habitIndex) => {
+                            document.write('<tr>');
+                            document.write(`<td>${habit}</td>`);
+                            for (let day = 1; day <= 90; day++) {
+                                document.write(`
+                                   <td><input type="checkbox" id="habit-${habitIndex + 1}-day-${day}-sushil" onchange="saveProgress(this.id, this.checked)"></td>
+                                    <td><input type="checkbox" id="habit-${habitIndex + 1}-day-${day}-sravan" onchange="saveProgress(this.id, this.checked)"></td>
+
+
+                                `);
+                            }
+                            document.write('</tr>');
+                        });
+                    </script>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

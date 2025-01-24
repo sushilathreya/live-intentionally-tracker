@@ -1,0 +1,45 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9; /* Optional: Background color for better contrast */
+}
+
+.container {
+    margin-left: 30px; /* Leave only 30px on the left */
+    padding: 20px;
+}
+
+h1 {
+    text-align: left; /* Align the heading to the left */
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+table {
+    width: auto; /* Adjust table width dynamically */
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+th {
+    background-color: #f4f4f4; /* Light gray for header */
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9; /* Light background for alternate rows */
+}
+
+tr:nth-child(odd) {
+    background-color: #fff; /* White background for odd rows */
+}
+
+input[type="checkbox"] {
+    transform: scale(1.2); /* Slightly larger checkboxes for better visibility */
+}
