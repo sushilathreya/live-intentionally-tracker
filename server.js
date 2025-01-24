@@ -1,55 +1,54 @@
-const express = require('express');
+const express = require('express'); // Import Express
 const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { promisify } = require('util');
+const admin = require('firebase-admin'); // Import Firebase Admin SDK
 
-const app = express();
-const PORT = process.env.PORT || 3000; // Use the port provided by Render or default to 3000
-const filePath = './progress.json';
+const app = express(); // Initialize Express
+const PORT = process.env.PORT || 3000; // Use environment port or 3000
 
-// Promisify fs.readFile and fs.writeFile for better async handling
-const readFile = promisify(fs.readFile);
-const writeFile = promisify(fs.writeFile);
-
-// Middleware
-app.use(cors({ origin: '*' })); // Allow all origins for now (can restrict for production)
-app.use(bodyParser.json({ limit: '10mb' })); // Increase payload size limit
-app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from 'public' folder
-
-// Ensure `progress.json` exists and is valid
-async function initializeProgressFile() {
-    if (!fs.existsSync(filePath)) {
-        console.log('progress.json not found. Creating a new one.');
-        await writeFile(filePath, '{}', 'utf8'); // Create an empty JSON file
-    } else {
-        try {
-            const data = await readFile(filePath, 'utf8');
-            JSON.parse(data); // Validate existing JSON
-        } catch (err) {
-            console.error('Invalid JSON detected in progress.json. Resetting file.');
-            await writeFile(filePath, '{}', 'utf8'); // Reset to an empty JSON object
-        }
-    }
-}
-
-// Initialize `progress.json` on server startup
-initializeProgressFile().catch((err) => console.error('Error initializing progress.json:', err));
-
-// Endpoint to load progress
-app.get('/progress', async (req, res) => {
-    try {
-        const data = await readFile(filePath, 'utf8');
-        const progress = JSON.parse(data || '{}'); // Safely parse or default to empty object
-        res.json(progress);
-    } catch (err) {
-        console.error('Error reading progress.json:', err);
-        res.status(500).json({ error: 'Failed to load progress' });
-    }
+// Firebase Admin Initialization
+const serviceAccount = require('./live-intentionally-firebase-adminsdk-fbsvc-9c5a0b5ef1.json'); // Ensure the path is correct
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: 'https://live-intentionally-default-rtdb.europe-west1.firebasedatabase.app/', // Replace with your Firebase Database URL
 });
 
-// Endpoint to save progress
+const db = admin.database();
+
+// Middleware
+app.use(cors({ origin: '*' })); // Allow all origins for now
+app.use(bodyParser.json({ limit: '10mb' })); // Support larger JSON payloads
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from 'public'
+
+// app.get('/test-firebase', async (req, res) => {
+//     const ref = db.ref('progress');
+//     ref.set({ test: true }, (error) => {
+//         if (error) {
+//             console.error('Error writing test data to Firebase:', error);
+//             res.status(500).json({ error: 'Failed to connect to Firebase' });
+//         } else {
+//             console.log('Test data written to Firebase.');
+//             res.json({ success: true });
+//         }
+//     });
+// });
+
+
+// Endpoint to load progress from Firebase
+app.get('/progress', async (req, res) => {
+    const ref = db.ref('progress');
+    ref.once('value', (snapshot) => {
+        console.log(snapshot.val());
+        res.json(snapshot.val() || {});
+    }, (error) => {
+        console.error('Error reading from Firebase:', error);
+        res.status(500).json({ error: 'Failed to load progress' });
+    });
+});
+
+// Endpoint to save progress to Firebase
 app.post('/progress', async (req, res) => {
     const progress = req.body;
 
@@ -59,23 +58,19 @@ app.post('/progress', async (req, res) => {
         return res.status(400).json({ error: 'Invalid data format' });
     }
 
-    try {
-        const currentData = await readFile(filePath, 'utf8');
-        const existingProgress = JSON.parse(currentData || '{}');
-
-        // Merge new progress with existing data
-        const updatedProgress = { ...existingProgress, ...progress };
-
-        // Write the updated progress to the file
-        await writeFile(filePath, JSON.stringify(updatedProgress, null, 2), 'utf8');
-        res.json({ success: true });
-    } catch (err) {
-        console.error('Error writing to progress.json:', err);
-        res.status(500).json({ error: 'Failed to save progress' });
-    }
+    const ref = db.ref('progress');
+    ref.update(progress, (error) => {
+        if (error) {
+            console.error('Error saving progress to Firebase:', error);
+            res.status(500).json({ error: 'Failed to save progress' });
+        } else {
+            console.log('Progress saved to Firebase:', progress); // Log data being saved
+            res.json({ success: true });
+        }
+    });
 });
 
-// Fallback route to serve the frontend
+// Fallback route to serve frontend
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

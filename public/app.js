@@ -1,4 +1,5 @@
 const serverURL = 'https://live-intentionally-tracker.onrender.com';
+// const serverURL = 'http://localhost:3000';
 
 // Load progress from the server on page load
 document.addEventListener('DOMContentLoaded', () => {
