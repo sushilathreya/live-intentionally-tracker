@@ -6,17 +6,17 @@ const cors = require('cors');
 const { promisify } = require('util');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // Use the port provided by Render or default to 3000
 const filePath = './progress.json';
 
-// Promisify fs.readFile and fs.writeFile for better handling
+// Promisify fs.readFile and fs.writeFile for better async handling
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: '*' })); // Allow all origins for now (can restrict for production)
 app.use(bodyParser.json({ limit: '10mb' })); // Increase payload size limit
-app.use(express.static(path.join(__dirname, 'public'))); // Serve static files
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from 'public' folder
 
 // Ensure `progress.json` exists and is valid
 async function initializeProgressFile() {
@@ -37,10 +37,6 @@ async function initializeProgressFile() {
 // Initialize `progress.json` on server startup
 initializeProgressFile().catch((err) => console.error('Error initializing progress.json:', err));
 
-// Buffer for batching updates
-let updateBuffer = {};
-let writeTimeout = null;
-
 // Endpoint to load progress
 app.get('/progress', async (req, res) => {
     try {
@@ -53,8 +49,8 @@ app.get('/progress', async (req, res) => {
     }
 });
 
-// Endpoint to save progress with buffering
-app.post('/progress', (req, res) => {
+// Endpoint to save progress
+app.post('/progress', async (req, res) => {
     const progress = req.body;
 
     // Validate incoming data
@@ -63,34 +59,20 @@ app.post('/progress', (req, res) => {
         return res.status(400).json({ error: 'Invalid data format' });
     }
 
-    // Add to buffer
-    updateBuffer = { ...updateBuffer, ...progress };
+    try {
+        const currentData = await readFile(filePath, 'utf8');
+        const existingProgress = JSON.parse(currentData || '{}');
 
-    // Schedule a batched write to file
-    if (!writeTimeout) {
-        writeTimeout = setTimeout(async () => {
-            try {
-                const currentData = await readFile(filePath, 'utf8');
-                const existingProgress = JSON.parse(currentData || '{}');
+        // Merge new progress with existing data
+        const updatedProgress = { ...existingProgress, ...progress };
 
-                // Merge buffered updates with existing progress
-                const updatedProgress = { ...existingProgress, ...updateBuffer };
-
-                // Write the updated progress to the file
-                await writeFile(filePath, JSON.stringify(updatedProgress, null, 2), 'utf8');
-                console.log('Progress successfully updated.');
-
-                // Clear the buffer
-                updateBuffer = {};
-            } catch (err) {
-                console.error('Error writing to progress.json:', err);
-            } finally {
-                writeTimeout = null; // Clear the timeout flag
-            }
-        }, 500); // Batch updates every 500ms
+        // Write the updated progress to the file
+        await writeFile(filePath, JSON.stringify(updatedProgress, null, 2), 'utf8');
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error writing to progress.json:', err);
+        res.status(500).json({ error: 'Failed to save progress' });
     }
-
-    res.json({ success: true });
 });
 
 // Fallback route to serve the frontend
